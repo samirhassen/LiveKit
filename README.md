@@ -1,4 +1,4 @@
-Livekit to AWS EKS
+# Deploy Livekit to Kubernetes in AWS
 
 # Requirements 
 - AWS cli with credentials eksctl
