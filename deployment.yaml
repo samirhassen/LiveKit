@@ -1,0 +1,68 @@
+# livekit-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mbb-cr1
+  namespace: mbb-space1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: livekit
+  template:
+    metadata:
+      labels:
+        app: livekit
+    spec:
+      serviceAccountName: mbb-sa1
+      containers:
+      - name: livekit
+        image: livekit/livekit-server:latest
+        args: ["--config", "/config/config.yaml"]
+        env:
+        - name: LIVEKIT_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: livekit-secret
+              key: apiKey
+        - name: LIVEKIT_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: livekit-secret
+              key: apiSecret
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: livekit-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mbb-sa1
+  namespace: mbb-space1
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: mbb-space1
+  name: livekit-role
+rules:
+- apiGroups: [""] 
+  resources: ["pods", "services", "secrets", "configmaps"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: livekit-rolebinding
+  namespace: mbb-space1
+subjects:
+- kind: ServiceAccount
+  name: mbb-sa1
+roleRef:
+  kind: Role
+  name: livekit-role
+  apiGroup: rbac.authorization.k8s.io
